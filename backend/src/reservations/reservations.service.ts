@@ -43,7 +43,6 @@ export class ReservationsService {
             throw new BadRequestException('Этот временной слот уже занят');
         }
 
-        // Создаем дату в UTC
         const reservationDate = new Date(`${reserved_date}T00:00:00.000Z`);
 
         const reservation = this.reservationRepository.create({
@@ -64,12 +63,17 @@ export class ReservationsService {
         });
 
         const now = new Date();
-        return reservations.map(reservation => {
-            // Формируем дату бронирования в UTC
-            const reservationDateStr = `${reservation.reserved_date.toISOString().split('T')[0]}T${reservation.reserved_time}:00.000Z`;
-            const reservationDate = new Date(reservationDateStr);
 
-            const canCancel = reservation.status === 'booked' && reservationDate > now;
+        return reservations.map(reservation => {
+            const [hourStr, minuteStr = '00'] = reservation.reserved_time.split(':');
+            const hour = parseInt(hourStr.padStart(2, '0'), 10);
+            const minute = parseInt(minuteStr.padStart(2, '0'), 10);
+
+            const date = new Date(reservation.reserved_date);
+            date.setUTCHours(hour, minute, 0, 0); // Устанавливаем точное UTC-время
+
+            const canCancel = reservation.status === 'booked' && date > now;
+
             return { ...reservation, canCancel };
         });
     }
@@ -81,11 +85,17 @@ export class ReservationsService {
         }
 
         if (reservation.status === 'cancelled') {
-            throw new BadRequestException('Б)$-ронирование уже отменено');
+            throw new BadRequestException('Бронирование уже отменено');
         }
 
         const now = new Date();
-        const reservationDate = new Date(`${reservation.reserved_date.toISOString().split('T')[0]}T${reservation.reserved_time}:00.000Z`);
+        const [hourStr, minuteStr = '00'] = reservation.reserved_time.split(':');
+        const hour = parseInt(hourStr.padStart(2, '0'), 10);
+        const minute = parseInt(minuteStr.padStart(2, '0'), 10);
+
+        const reservationDate = new Date(reservation.reserved_date);
+        reservationDate.setUTCHours(hour, minute, 0, 0);
+
         if (reservationDate < now) {
             throw new BadRequestException('Нельзя отменить прошедшее бронирование');
         }
