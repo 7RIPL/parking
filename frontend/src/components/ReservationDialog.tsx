@@ -50,18 +50,39 @@ const ReservationDialog: React.FC<ReservationDialogProps> = ({ parkingSpot, onCl
         }
 
         try {
+            const [h, m = '00'] = selectedTime.split(':');
+            const formattedTime = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+
             await createReservation({
                 parkingSpotId: parkingSpot.id,
                 reserved_date: format(selectedDate, 'yyyy-MM-dd'),
-                reserved_time: selectedTime,
+                reserved_time: formattedTime,
             });
             if (onReservationCreated) {
-                onReservationCreated(); // Вызываем коллбэк после создания бронирования
+                onReservationCreated();
             }
             onClose();
         } catch (err) {
             setError('Ошибка при бронировании');
         }
+    };
+
+    const shouldDisableDate = (date: Date) => {
+        const now = new Date();
+        const dateOnly = new Date(date);
+        dateOnly.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Запретить даты до сегодняшнего дня
+        if (dateOnly < today) return true;
+
+        // Запретить сегодня, если уже слишком поздно (например, после 23:00)
+        if (dateOnly.getTime() === today.getTime() && now.getHours() >= 23) {
+            return true;
+        }
+
+        return false;
     };
 
     return (
@@ -79,8 +100,12 @@ const ReservationDialog: React.FC<ReservationDialogProps> = ({ parkingSpot, onCl
                     onChange={(e) => {
                         const value = e.target.value;
                         const newDate = value ? new Date(value) : null;
-                        setSelectedDate(newDate);
-                        setError('');
+                        if (newDate && !shouldDisableDate(newDate)) {
+                            setSelectedDate(newDate);
+                            setError('');
+                        } else {
+                            setSelectedDate(null);
+                        }
                     }}
                     inputProps={{
                         min: format(new Date(), 'yyyy-MM-dd'),
