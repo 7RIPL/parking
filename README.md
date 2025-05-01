@@ -1,6 +1,7 @@
 CREATE DATABASE parking_system;
 
 cd backend 
+
 create file
 .env 
 DB_HOST=localhost
