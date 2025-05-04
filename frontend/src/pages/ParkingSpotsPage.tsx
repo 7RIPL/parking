@@ -5,18 +5,23 @@ import { useNavigate } from 'react-router-dom';
 
 const ParkingSpotsPage: React.FC = () => {
     const navigate = useNavigate();
+    const isAuthenticated = !!localStorage.getItem('token');
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate('/login');
+    const handleAuthAction = () => {
+        if (isAuthenticated) {
+            localStorage.removeItem('token');
+            navigate('/login');
+        } else {
+            navigate('/login');
+        }
     };
 
     return (
         <Container>
             <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mt: 4, mb: 2 }}>
                 <Typography variant="h4">Парковочные места</Typography>
-                <Button variant="outlined" color="error" onClick={handleLogout}>
-                    Выйти
+                <Button variant="outlined" color="error" onClick={handleAuthAction}>
+                    {isAuthenticated ? 'Выйти' : 'Войти'}
                 </Button>
             </Box>
             <Button
